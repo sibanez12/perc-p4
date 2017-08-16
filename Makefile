@@ -33,19 +33,37 @@
 SDNET_OUT_DIR=nf_sume_sdnet_ip
 
 PX=sdnet
-PX_FLAGS=-skipEval -busType axi -busWidth 256 -singlecontrolport -workDir ${SDNET_OUT_DIR}
+PX_FLAGS=-busType axi -busWidth 256 -singlecontrolport -workDir ${SDNET_OUT_DIR}
 TARGET=${SUME_FOLDER}/lib/hw/contrib/cores
 P4_SWITCH=SimpleSumeSwitch
 P4_SWITCH_BASE_ADDR=0x44020000
 SWITCH_INFO=src/.sdnet_switch_info.dat
 
-all: clean 
-	make -C src/
-	make -C testdata/
-	$(PX) ./src/${P4_PROJECT_NAME}.sdnet $(PX_FLAGS)
+# Compile to HDL with P4-SDNet
+# Running vivado_sim.bash or questa.bash compares the HDL simulation output to user provided expected output 
+all: clean frontend compile_no_cpp_test run_scripts
 	rsync -av --ignore-missing-args src/*.tbl ${SDNET_OUT_DIR}/${P4_SWITCH}/
 	cp testdata/*.txt ${SDNET_OUT_DIR}/${P4_SWITCH}/
 	cp testdata/*.axi ${SDNET_OUT_DIR}/${P4_SWITCH}/
+
+# Compile to HDL with P4-SDNet
+# Running vivado_sim.bash or questa.bash compares the HDL simulation output to the C++ simulation output
+cpp_test: clean frontend compile_cpp_test run_scripts 
+	rsync -av --ignore-missing-args src/*.tbl ${SDNET_OUT_DIR}/${P4_SWITCH}/
+	cp testdata/src.pcap ${SDNET_OUT_DIR}/${P4_SWITCH}/Packet.user
+	cp testdata/Tuple_in.txt ${SDNET_OUT_DIR}/${P4_SWITCH}/Tuple.user
+
+frontend:
+	make -C src/
+	make -C testdata/
+
+compile_cpp_test:
+	$(PX) ./src/${P4_PROJECT_NAME}.sdnet $(PX_FLAGS)
+
+compile_no_cpp_test:
+	$(PX) ./src/${P4_PROJECT_NAME}.sdnet -skipEval $(PX_FLAGS)
+
+run_scripts:
 	${SUME_SDNET}/bin/gen_P4_SWITCH_externs.py ${SWITCH_INFO} ${SDNET_OUT_DIR}/${P4_SWITCH}/ ${SUME_SDNET}/templates/ ./testdata/ ./sw/ --base_address ${P4_SWITCH_BASE_ADDR}
 	${SUME_SDNET}/bin/gen_P4_SWITCH_API.py ${SWITCH_INFO} ${SDNET_OUT_DIR}/${P4_SWITCH}/ sw/ ${SUME_SDNET}/templates/ --base_address ${P4_SWITCH_BASE_ADDR}
 	${SUME_SDNET}/bin/gen_P4_SWITCH_CLI.py ${SWITCH_INFO} ${SDNET_OUT_DIR}/${P4_SWITCH}/ sw/ ${SUME_SDNET}/templates/ --base_address ${P4_SWITCH_BASE_ADDR}
@@ -53,7 +71,10 @@ all: clean
 	sed -i 's/vsim/vsim \-ldflags \"\-B\/usr\/lib\/x86\_64\-linux-gnu\"/g' ${SDNET_OUT_DIR}/${P4_SWITCH}/questa.bash
 	# modify the P4_SWITCH_tb so that it writes the table configuration writes to a file
 	${SUME_SDNET}/bin/modify_P4_SWITCH_tb.py ${SDNET_OUT_DIR}/${P4_SWITCH}/Testbench/${P4_SWITCH}_tb.sv
-	
+	rsync -av --ignore-missing-args src/*.tbl ${SDNET_OUT_DIR}/${P4_SWITCH}/${P4_SWITCH}.TB/
+	cp testdata/src.pcap ${SDNET_OUT_DIR}/${P4_SWITCH}/${P4_SWITCH}.TB/Packet.user
+	cp testdata/Tuple_in.txt ${SDNET_OUT_DIR}/${P4_SWITCH}/${P4_SWITCH}.TB/Tuple.user
+
 config_writes:
 	${SUME_SDNET}/bin/gen_config_writes.py ${SDNET_OUT_DIR}/${P4_SWITCH}/config_writes.txt ${P4_SWITCH_BASE_ADDR} testdata
 
