@@ -28,14 +28,14 @@
 #
 
 
-# Makefile to convert the P4 into PX and P4 commands into SDNet tables
+# Makefile to build the testdata
 
-all: ${P4_PROJECT_NAME}.p4 commands.txt
-	p4c-sdnet -o ${P4_PROJECT_NAME}.sdnet ${P4_PROJECT_NAME}.p4
-	${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
-	./gen_table_entries.py
-	${SUME_SDNET}/bin/p4_px_tables.py commands_div.txt .sdnet_switch_info.dat
+all: gen_testdata.py
+	./gen_testdata.py
+	${SUME_SDNET}/bin/pcap2axi --output Packet_in.axi --bus_width 256 src.pcap
+	${SUME_SDNET}/bin/pcap2axi --output Packet_expect.axi --bus_width 256 dst.pcap
 
 clean:
-	rm -f *.sdnet *.tbl .sdnet_switch_info.dat commands_div.txt
+	rm -f *.pcap *.txt *.pyc *.axi config_writes.* *_reg_defines.py
+
 

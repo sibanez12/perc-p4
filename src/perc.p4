@@ -90,18 +90,12 @@ header Perc_control_h {
     bit<8> hopCnt;
     bit<8> bottleneck_id;
     PercInt_t demand;
-}
-
-// header for header_stack to store flow label for each link along path
-header Perc_label_h {
-    bit<8> label;
-    bit<8> bos;
-}
-
-// header for header_stack to store flow BW alloc for each link along path
-header Perc_alloc_h {
-    PercInt_t alloc;
-    bit<8> bos;
+    bit<8> label_0;
+    bit<8> label_1;
+    bit<8> label_2;
+    PercInt_t alloc_0;
+    PercInt_t alloc_1;
+    PercInt_t alloc_2;
 }
 
 // List of all recognized headers
@@ -109,8 +103,6 @@ struct Parsed_packet {
     Ethernet_h ethernet; 
     Perc_generic_h perc_generic;
     Perc_control_h perc_control;
-    Perc_label_h[MAX_HOPS] perc_label;
-    Perc_alloc_h[MAX_HOPS] perc_alloc;
 }
 
 // user defined metadata: can be used to shared information between
@@ -125,6 +117,7 @@ struct digest_data_t {
 }
 
 // Parser Implementation
+@Xilinx_MaxPacketRegion(16384)
 parser TopParser(packet_in b, 
                  out Parsed_packet p, 
                  out user_metadata_t user_metadata,
@@ -150,23 +143,7 @@ parser TopParser(packet_in b,
 
     state parse_perc_control {
         b.extract(p.perc_control);
-        transition parse_perc_label;
-    }
-
-    state parse_perc_label {
-        b.extract(p.perc_label.next);
-        transition select(p.perc_label.last.bos) {
-            0 : parse_perc_label;
-            default : parse_perc_alloc;
-        }
-    }
-
-    state parse_perc_alloc {
-        b.extract(p.perc_alloc.next);
-        transition select(p.perc_alloc.last.bos) {
-            0 : parse_perc_alloc;
-            default : accept;
-        }
+        transition accept;
     }
 
 }
@@ -179,8 +156,14 @@ control TopPipe(inout Parsed_packet p,
 
     /************* Ethernet forwarding *************/
 
+    port_t dst_port;
+
     action set_output_port(port_t port) {
-        sume_metadata.dst_port = port;
+        dst_port = port;
+    }
+
+    action set_default_output_port() {
+        dst_port = 8w0;
     }
 
     table forward {
@@ -188,10 +171,10 @@ control TopPipe(inout Parsed_packet p,
 
         actions = {
             set_output_port;
-            NoAction;
+            set_default_output_port;
         }
         size = 64;
-        default_action = NoAction;
+        default_action = set_default_output_port;
     }
 
     /************* port to index map *************/
@@ -296,6 +279,7 @@ control TopPipe(inout Parsed_packet p,
         forward.apply();
 
         if (p.perc_control.isValid()) {
+            sume_metadata.hp_dst_port = dst_port; // send to high priority queue 
             if (p.perc_control.isForward != 1) {
                 p.perc_control.hopCnt = p.perc_control.hopCnt - 1;
                 port = sume_metadata.src_port;
@@ -303,6 +287,19 @@ control TopPipe(inout Parsed_packet p,
                 port = sume_metadata.dst_port;
             }
             port_index_map.apply(); // compute index
+
+            bit<2> label;
+            PercInt_t alloc;
+            if (index == 0) {
+                label = p.perc_control.label_0[1:0];
+                alloc = p.perc_control.alloc_0;
+            } else if (index == 1) {
+                label = p.perc_control.label_1[1:0];
+                alloc = p.perc_control.alloc_1;               
+            } else {
+                label = p.perc_control.label_2[1:0];
+                alloc = p.perc_control.alloc_2;
+            }
 
             // Update sumSat, numSat, and numFlows
             bit<2> newLabel;
@@ -313,8 +310,8 @@ control TopPipe(inout Parsed_packet p,
             PercInt_t linkCap;
             extern1_agg_state(p.perc_control.leave[0:0],
                               index,
-                              p.perc_label[p.perc_control.hopCnt].label[1:0],
-                              p.perc_alloc[p.perc_control.hopCnt].alloc,
+                              label,
+                              alloc,
                               p.perc_control.demand,
                               newLabel,
                               newAlloc,
@@ -322,6 +319,17 @@ control TopPipe(inout Parsed_packet p,
                               numSatAdj,
                               numFlowsAdj,
                               linkCap);
+            // update label and alloc with new values
+            if (index == 0) {
+                p.perc_control.label_0 = 6w0++newLabel;
+                p.perc_control.alloc_0 = newAlloc;
+            } else if (index == 1) {
+                p.perc_control.label_1 = 6w0++newLabel;
+                p.perc_control.alloc_1 = newAlloc;
+            } else {
+                p.perc_control.label_2 = 6w0++newLabel;
+                p.perc_control.alloc_2 = newAlloc;
+            }
 
             // Calculate Residual level (R)
             // num / denom = exp(log(num) - log(denom))
@@ -337,8 +345,12 @@ control TopPipe(inout Parsed_packet p,
             }
 
             // fill in new allocation if flow is UNSAT now
-            if (newLabel == UNSAT) {
-                p.perc_alloc[p.perc_control.hopCnt].alloc = R;
+            if (newLabel == UNSAT && index == 0) {
+                p.perc_control.alloc_0 = R;
+            } else if (newLabel == UNSAT && index == 1) {
+                p.perc_control.alloc_1 = R;
+            } else if (newLabel == UNSAT && index == 2) {
+                p.perc_control.alloc_2 = R;
             }
 
             // perform maxSat update
@@ -370,20 +382,24 @@ control TopPipe(inout Parsed_packet p,
             if (p.perc_control.isForward == 1) {
                 p.perc_control.hopCnt = p.perc_control.hopCnt + 1;
             }
+        } else {
+            sume_metadata.lp_dst_port = dst_port; // send to low priority queue
         }
 
     }
 }
 
 // Deparser Implementation
+@Xilinx_MaxPacketRegion(16384)
 control TopDeparser(packet_out b,
                     in Parsed_packet p,
                     in user_metadata_t user_metadata,
                     inout digest_data_t digest_data, 
                     inout sume_metadata_t sume_metadata) { 
     apply {
-        // simplified deparsing
-        b.emit(p); 
+        b.emit(p.ethernet); 
+        b.emit(p.perc_generic); 
+        b.emit(p.perc_control); 
     }
 }
 

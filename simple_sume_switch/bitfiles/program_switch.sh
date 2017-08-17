@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #
 # Copyright (c) 2017 Stephen Ibanez
 # All rights reserved.
@@ -28,14 +30,7 @@
 #
 
 
-# Makefile to convert the P4 into PX and P4 commands into SDNet tables
+# Program the switch with the bit file and then configure the tables
+${SUME_SDNET}/tools/program_switch.sh ${P4_PROJECT_NAME}.bit config_writes.sh
 
-all: ${P4_PROJECT_NAME}.p4 commands.txt
-	p4c-sdnet -o ${P4_PROJECT_NAME}.sdnet ${P4_PROJECT_NAME}.p4
-	${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
-	./gen_table_entries.py
-	${SUME_SDNET}/bin/p4_px_tables.py commands_div.txt .sdnet_switch_info.dat
-
-clean:
-	rm -f *.sdnet *.tbl .sdnet_switch_info.dat commands_div.txt
 

@@ -1,6 +1,16 @@
 #
-# Copyright (c) 2017 Stephen Ibanez
+# Copyright (c) 2015 Noa Zilberman
 # All rights reserved.
+#
+#  File:
+#        Makefile
+#
+#  Project:
+#        reference projects
+#
+#
+#  Description:
+#        This makefile is used to generate and compile SDK project for NetFPGA reference projects.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
 # under National Science Foundation under Grant No. CNS-0855268,
@@ -26,16 +36,25 @@
 #
 # @NETFPGA_LICENSE_HEADER_END@
 #
+# Vivado Launch Script
+################################################################################
 
 
-# Makefile to convert the P4 into PX and P4 commands into SDNet tables
+HW = hw
+SW = sw/embedded/
+TEST = test
 
-all: ${P4_PROJECT_NAME}.p4 commands.txt
-	p4c-sdnet -o ${P4_PROJECT_NAME}.sdnet ${P4_PROJECT_NAME}.p4
-	${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
-	./gen_table_entries.py
-	${SUME_SDNET}/bin/p4_px_tables.py commands_div.txt .sdnet_switch_info.dat
+all:    clean
+	make -C ${HW} project
+#	make -C ${HW} export_to_sdk
+#	make -C ${SW} project
+#	make -C ${SW} compile
+#	make -C ${HW} load_elf
+
 
 clean:
-	rm -f *.sdnet *.tbl .sdnet_switch_info.dat commands_div.txt
+	make -C ${HW} distclean
+	make -C ${SW} distclean
+	rm -rfv vivado*;\
+
 

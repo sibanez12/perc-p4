@@ -1,6 +1,9 @@
 #
-# Copyright (c) 2017 Stephen Ibanez
+# Copyright (c) 2015 Bjoern A. Zeeb
 # All rights reserved.
+#
+#  File:
+#        Makefile
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
 # under National Science Foundation under Grant No. CNS-0855268,
@@ -27,15 +30,13 @@
 # @NETFPGA_LICENSE_HEADER_END@
 #
 
+all:	rwaxi
 
-# Makefile to convert the P4 into PX and P4 commands into SDNet tables
-
-all: ${P4_PROJECT_NAME}.p4 commands.txt
-	p4c-sdnet -o ${P4_PROJECT_NAME}.sdnet ${P4_PROJECT_NAME}.p4
-	${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
-	./gen_table_entries.py
-	${SUME_SDNET}/bin/p4_px_tables.py commands_div.txt .sdnet_switch_info.dat
+rwaxi:
+	cc -Wall -Werror -o rwaxi rwaxi.c \
+		-I../driver
 
 clean:
-	rm -f *.sdnet *.tbl .sdnet_switch_info.dat commands_div.txt
+	rm -f rwaxi
 
+# end

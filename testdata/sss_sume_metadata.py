@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 #
 # Copyright (c) 2017 Stephen Ibanez
 # All rights reserved.
@@ -28,14 +30,40 @@
 #
 
 
-# Makefile to convert the P4 into PX and P4 commands into SDNet tables
+"""
+Define the sume_metadata bus for SDNet simulations
+"""
 
-all: ${P4_PROJECT_NAME}.p4 commands.txt
-	p4c-sdnet -o ${P4_PROJECT_NAME}.sdnet ${P4_PROJECT_NAME}.p4
-	${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
-	./gen_table_entries.py
-	${SUME_SDNET}/bin/p4_px_tables.py commands_div.txt .sdnet_switch_info.dat
+import collections
 
-clean:
-	rm -f *.sdnet *.tbl .sdnet_switch_info.dat commands_div.txt
+""" SDNet Tuple format:
+   unused;            (88 bits)
+   hp_dst_port;       (8 bits) 
+   lp_dst_port;       (8 bits) 
+   src_port;          (8 bits) 
+   pkt_len;           (16 bits)
+"""
+
+sume_field_len = collections.OrderedDict()
+sume_field_len['unused'] = 88
+sume_field_len['hp_dst_port'] = 8
+sume_field_len['lp_dst_port'] = 8
+sume_field_len['src_port'] = 8
+sume_field_len['pkt_len'] = 16
+
+# initialize tuple_in
+sume_tuple_in = collections.OrderedDict()
+sume_tuple_in['unused'] = 0
+sume_tuple_in['hp_dst_port'] = 0
+sume_tuple_in['lp_dst_port'] = 0
+sume_tuple_in['src_port'] = 0
+sume_tuple_in['pkt_len'] = 0
+
+#initialize tuple_expect
+sume_tuple_expect = collections.OrderedDict()
+sume_tuple_expect['unused'] = 0
+sume_tuple_expect['hp_dst_port'] = 0
+sume_tuple_expect['lp_dst_port'] = 0
+sume_tuple_expect['src_port'] = 0
+sume_tuple_expect['pkt_len'] = 0
 

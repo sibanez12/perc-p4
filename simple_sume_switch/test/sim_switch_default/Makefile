@@ -28,14 +28,13 @@
 #
 
 
-# Makefile to convert the P4 into PX and P4 commands into SDNet tables
+# Makefile to set up the simulation environment with the test data
 
-all: ${P4_PROJECT_NAME}.p4 commands.txt
-	p4c-sdnet -o ${P4_PROJECT_NAME}.sdnet ${P4_PROJECT_NAME}.p4
-	${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
-	./gen_table_entries.py
-	${SUME_SDNET}/bin/p4_px_tables.py commands_div.txt .sdnet_switch_info.dat
+SDNET_BASE_ADDR=0x44020000
+
+all: clean
+	cp ${P4_PROJECT_DIR}/testdata/config_writes.py ./ 
 
 clean:
-	rm -f *.sdnet *.tbl .sdnet_switch_info.dat commands_div.txt
-
+	rm -f config_writes.py
+	rm -f *.pyc

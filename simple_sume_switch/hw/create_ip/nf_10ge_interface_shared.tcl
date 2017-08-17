@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017 Stephen Ibanez
+# Copyright (c) 2015 University of Cambridge
 # All rights reserved.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -25,17 +25,35 @@
 # specific language governing permissions and limitations under the License.
 #
 # @NETFPGA_LICENSE_HEADER_END@
-#
+
+# Set variables.
+
+## CORE CONFIGURATION parameters
+# should correspond to hdl params
+set sharedLogic         "TRUE"
+set tdataWidth          256
 
 
-# Makefile to convert the P4 into PX and P4 commands into SDNet tables
+set convWidth [expr $tdataWidth/8]
 
-all: ${P4_PROJECT_NAME}.p4 commands.txt
-	p4c-sdnet -o ${P4_PROJECT_NAME}.sdnet ${P4_PROJECT_NAME}.p4
-	${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
-	./gen_table_entries.py
-	${SUME_SDNET}/bin/p4_px_tables.py commands_div.txt .sdnet_switch_info.dat
+if { $sharedLogic eq "True" || $sharedLogic eq "TRUE" || $sharedLogic eq "true" } {
+   set supportLevel 1
+} else {
+   set supportLevel 0
+}
 
-clean:
-	rm -f *.sdnet *.tbl .sdnet_switch_info.dat commands_div.txt
+
+create_ip -name axi_10g_ethernet -vendor xilinx.com -library ip -version 3.1 -module_name axi_10g_ethernet_shared
+set_property -dict [list CONFIG.Management_Interface {false}] [get_ips axi_10g_ethernet_shared]
+set_property -dict [list CONFIG.base_kr {BASE-R}] [get_ips axi_10g_ethernet_shared]
+set_property -dict [list CONFIG.SupportLevel $supportLevel] [get_ips axi_10g_ethernet_shared]
+set_property -dict [list CONFIG.autonegotiation {0}] [get_ips axi_10g_ethernet_shared]
+set_property -dict [list CONFIG.fec {0}] [get_ips axi_10g_ethernet_shared]
+set_property -dict [list CONFIG.Statistics_Gathering {0}] [get_ips axi_10g_ethernet_shared]
+
+set_property generate_synth_checkpoint false [get_files axi_10g_ethernet_shared.xci]
+reset_target all [get_ips axi_10g_ethernet_shared]
+generate_target all [get_ips axi_10g_ethernet_shared]
+
+
 
