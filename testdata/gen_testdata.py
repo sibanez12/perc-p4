@@ -35,6 +35,12 @@ import random
 from collections import OrderedDict
 import sss_sdnet_tuples
 
+import sys, os
+sys.path.append(os.path.expandvars('$P4_PROJECT_DIR/sw/division'))
+from div_impl import N,  make_tables
+from perc_headers import *
+from switch_model import process_pkt
+
 ###########
 # pkt generation tools
 ###########
@@ -56,6 +62,7 @@ nf_expected[3] = []
 
 nf_port_map = {"nf0":0b00000001, "nf1":0b00000100, "nf2":0b00010000, "nf3":0b01000000, "dma0":0b00000010}
 nf_id_map = {"nf0":0, "nf1":1, "nf2":2, "nf3":3}
+nf_port_index_map = {0b00000001:0, 0b00000100:1, 0b00010000:2, 0b01000000:3}
 
 sss_sdnet_tuples.clear_tuple_files()
 
@@ -68,17 +75,20 @@ def applyPkt(pkt, ingress, time):
     pkt.time = time
     nf_applied[nf_id_map[ingress]].append(pkt)
 
-def expPkt(pkt, egress):
+def expPkt(pkt, hp_dst_port, lp_dst_port):
+    assert(hp_dst_port == 0 or lp_dst_port == 0) # both cannot be set
     pktsExpected.append(pkt)
-    sss_sdnet_tuples.sume_tuple_expect['dst_port'] = nf_port_map[egress]
+    sss_sdnet_tuples.sume_tuple_expect['hp_dst_port'] = hp_dst_port 
+    sss_sdnet_tuples.sume_tuple_expect['lp_dst_port'] = lp_dst_port
     sss_sdnet_tuples.write_tuples()
-    if egress in ["nf0","nf1","nf2","nf3"]:
-        nf_expected[nf_id_map[egress]].append(pkt)
-    elif egress == 'bcast':
-        nf_expected[0].append(pkt)
-        nf_expected[1].append(pkt)
-        nf_expected[2].append(pkt)
-        nf_expected[3].append(pkt)
+
+    dst_port = hp_dst_port ^ lp_dst_port
+    i = 0
+    while dst_port != 0:
+        if (dst_port & 1):
+            nf_expected[i].append(pkt)
+        dst_port = dst_port >> 2
+        i += 1
 
 def write_pcap_files():
     wrpcap("src.pcap", pktsApplied)
@@ -98,6 +108,38 @@ def write_pcap_files():
 #####################
 # generate testdata #
 #####################
+
+nf_mac_map = {"nf0":"08:11:11:11:11:08", "nf1":"08:22:22:22:22:08", "nf2":"08:33:33:33:33:08", "nf3":"08:44:44:44:44:08"}
+
+# set up the division tables
+make_tables()
+
+for i in range(1):
+    reset_max_sat = False
+    ingress = "nf0"
+    egress = "nf1"
+    flowID = 1
+    isControl = 1
+    leave = 0
+    isForward = 1
+    hopCnt = 0
+    bottleneck_id = (2**8)-1 # -1
+    demand = (2**N)-1  # inf
+    label_0 = NEW_FLOW
+    label_1 = NEW_FLOW
+    label_2 = NEW_FLOW
+    alloc_0 = (2**N)-1
+    alloc_1 = (2**N)-1
+    alloc_2 = (2**N)-1
+    pkt = Ether(dst=nf_mac_map[egress], src=nf_mac_map[ingress]) / \
+          Perc_generic(flowID = flowID, isControl = isControl) / \
+          Perc_control(leave=leave, isForward=isForward, hopCnt=hopCnt, bottleneck_id=bottleneck_id, demand=demand, label_0=label_0, label_1=label_1, label_2=label_2, alloc_0=alloc_0, alloc_1=alloc_1, alloc_2=alloc_2)
+    pkt = pad_pkt(pkt, 64)
+    print "-------------------------\nInput Pkt: \n-------------------------\n", pkt.show()
+    applyPkt(pkt, ingress, i)
+    (pkt, hp_dst_port, lp_dst_port) = process_pkt(pkt, nf_port_map[ingress], reset_max_sat)
+    print "-------------------------\nOutput Pkt: \n-------------------------\n", pkt.show()
+    expPkt(pkt, hp_dst_port, lp_dst_port)
 
 
 write_pcap_files()

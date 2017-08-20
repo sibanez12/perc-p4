@@ -328,4 +328,4 @@ set output_queues top_tb/top_sim/nf_datapath_0/bram_output_queues_1/inst/
 add_wave_divider {Output Queues Signals}
 add_wave $output_queues
 
-run 65us
+run 3000us

@@ -28,15 +28,45 @@
 #
 
 
-# Makefile to convert the P4 into PX and P4 commands into SDNet tables
+from scapy.all import *
+import sys, os
 
-all: clean
-	p4c-sdnet -o ${P4_PROJECT_NAME}.sdnet ${P4_PROJECT_NAME}.p4
-	cat commands_user.txt >> commands.txt
-	./gen_table_entries.py
-	cat commands_div.txt >> commands.txt
-	${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
+sys.path.append(os.path.expandvars('$P4_PROJECT_DIR/sw/division'))
+from div_impl import N
 
-clean:
-	rm -f *.sdnet *.tbl .sdnet_switch_info.dat commands_div.txt commands.txt
+INACTIVE = 0
+SAT      = 1
+UNSAT    = 2
+NEW_FLOW = 3
+
+PERC_TYPE = 0x1234
+
+class Perc_generic(Packet):
+    name = "Perc_generic"
+    fields_desc = [
+        BitField("flowID", 0, N),
+        BitField("isControl", 0, 8)
+    ]
+   
+
+class Perc_control(Packet):
+     name = "Perc_control"
+     fields_desc = [
+         BitField("leave", 0, 8),
+         BitField("isForward", 0, 8),
+         BitField("hopCnt", 0, 8),
+         BitField("bottleneck_id", 0, 8),
+         BitField("demand", 0, N),
+         ByteEnumField("label_0", 0, {INACTIVE:"INACTIVE", SAT:"SAT", UNSAT:"UNSAT", NEW_FLOW:"NEW_FLOW"}),
+         ByteEnumField("label_1", 0, {INACTIVE:"INACTIVE", SAT:"SAT", UNSAT:"UNSAT", NEW_FLOW:"NEW_FLOW"}),
+         ByteEnumField("label_2", 0, {INACTIVE:"INACTIVE", SAT:"SAT", UNSAT:"UNSAT", NEW_FLOW:"NEW_FLOW"}),
+         BitField("alloc_0", 0, N),
+         BitField("alloc_1", 0, N),
+         BitField("alloc_2", 0, N)
+     ]
+
+bind_layers(Ether, Perc_generic, type=PERC_TYPE)
+bind_layers(Perc_generic, Perc_control, isControl=1)
+bind_layers(Perc_generic, Raw, isControl=0)
+bind_layers(Perc_control, Raw)
 

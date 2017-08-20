@@ -37,7 +37,7 @@
  */
 
 #define N 32
-#define L 9
+#define L 10
 #define PERC_TYPE 0x1234
 #define MAX_HOPS 2
 
@@ -227,7 +227,7 @@ control TopPipe(inout Parsed_packet p,
             set_log_num;
             set_default_log_num;
         }
-        size = 383;
+        size = 1024;
         default_action = set_default_log_num;
     }
 
@@ -248,7 +248,7 @@ control TopPipe(inout Parsed_packet p,
             set_log_denom;
             set_default_log_denom;
         }
-        size = 383;
+        size = 1024;
         default_action = set_default_log_denom;
     }
 
@@ -269,7 +269,7 @@ control TopPipe(inout Parsed_packet p,
             set_result;
             set_default_result;
         }
-        size = 512;
+        size = 2048;
         default_action = set_default_result;
     }
 
@@ -284,16 +284,17 @@ control TopPipe(inout Parsed_packet p,
                 p.perc_control.hopCnt = p.perc_control.hopCnt - 1;
                 port = sume_metadata.src_port;
             } else {
-                port = sume_metadata.dst_port;
+                port = dst_port;
             }
             port_index_map.apply(); // compute index
 
             bit<2> label;
             PercInt_t alloc;
-            if (index == 0) {
+            // choose the correct label and alloc based on hopCnt
+            if (p.perc_control.hopCnt == 0) {
                 label = p.perc_control.label_0[1:0];
                 alloc = p.perc_control.alloc_0;
-            } else if (index == 1) {
+            } else if (p.perc_control.hopCnt == 1) {
                 label = p.perc_control.label_1[1:0];
                 alloc = p.perc_control.alloc_1;               
             } else {
@@ -320,10 +321,10 @@ control TopPipe(inout Parsed_packet p,
                               numFlowsAdj,
                               linkCap);
             // update label and alloc with new values
-            if (index == 0) {
+            if (p.perc_control.hopCnt == 0) {
                 p.perc_control.label_0 = 6w0++newLabel;
                 p.perc_control.alloc_0 = newAlloc;
-            } else if (index == 1) {
+            } else if (p.perc_control.hopCnt == 1) {
                 p.perc_control.label_1 = 6w0++newLabel;
                 p.perc_control.alloc_1 = newAlloc;
             } else {
@@ -345,11 +346,11 @@ control TopPipe(inout Parsed_packet p,
             }
 
             // fill in new allocation if flow is UNSAT now
-            if (newLabel == UNSAT && index == 0) {
+            if (newLabel == UNSAT && p.perc_control.hopCnt == 0) {
                 p.perc_control.alloc_0 = R;
-            } else if (newLabel == UNSAT && index == 1) {
+            } else if (newLabel == UNSAT && p.perc_control.hopCnt == 1) {
                 p.perc_control.alloc_1 = R;
-            } else if (newLabel == UNSAT && index == 2) {
+            } else if (newLabel == UNSAT && p.perc_control.hopCnt == 2) {
                 p.perc_control.alloc_2 = R;
             }
 
@@ -383,6 +384,7 @@ control TopPipe(inout Parsed_packet p,
                 p.perc_control.hopCnt = p.perc_control.hopCnt + 1;
             }
         } else {
+            // is a data packet
             sume_metadata.lp_dst_port = dst_port; // send to low priority queue
         }
 

@@ -24,9 +24,9 @@ len(log_table) =  383
 total_mem = 1885.75 bytes
 """
 
-N = 32 #16 
-m = 6  #6 #3
-l = 9  #9 #4
+N = 32
+m = 6 
+l = 10
 
 log_table = []
 exp_table = []
