@@ -34,6 +34,8 @@ import sys, os
 sys.path.append(os.path.expandvars('$P4_PROJECT_DIR/sw/division'))
 from div_impl import N
 
+TIMER_WIDTH = 64
+
 INACTIVE = 0
 SAT      = 1
 UNSAT    = 2
@@ -57,6 +59,8 @@ class Perc_control(Packet):
          BitField("hopCnt", 0, 8),
          BitField("bottleneck_id", 0, 8),
          BitField("demand", 0, N),
+         BitField("insert_timestamp", 0, 8),
+         BitField("timestamp", 0, TIMER_WIDTH),
          ByteEnumField("label_0", 0, {INACTIVE:"INACTIVE", SAT:"SAT", UNSAT:"UNSAT", NEW_FLOW:"NEW_FLOW"}),
          ByteEnumField("label_1", 0, {INACTIVE:"INACTIVE", SAT:"SAT", UNSAT:"UNSAT", NEW_FLOW:"NEW_FLOW"}),
          ByteEnumField("label_2", 0, {INACTIVE:"INACTIVE", SAT:"SAT", UNSAT:"UNSAT", NEW_FLOW:"NEW_FLOW"}),

@@ -6,6 +6,8 @@ from div_impl import make_tables, divide
 
 from perc_headers import *
 
+CTRL_PORT = 0b01000000
+
 labelMap = {INACTIVE:"INACTIVE", SAT:"SAT", UNSAT:"UNSAT", NEW_FLOW:"NEW_FLOW"}
 
 REG_DEPTH = 4
@@ -22,14 +24,14 @@ forward = {"08:11:11:11:11:08":0b00000001, "08:22:22:22:22:08":0b00000100, "08:3
 
 port_index_map = {0b00000001:0, 0b00000100:1, 0b00010000:2, 0b01000000:3}
 
-def process_pkt(pkt_in, src_port, reset_max_sat):
+def process_pkt(pkt_in, src_port, resetMaxSat):
     pkt = pkt_in.copy()
     hp_dst_port = 0
     lp_dst_port = 0
     dst_port = forward_apply(pkt) 
 
     if Perc_control in pkt:
-        hp_dst_port = dst_port
+        hp_dst_port = dst_port | CTRL_PORT
         if (pkt[Perc_control].isForward != 1):
             pkt[Perc_control].hopCnt -= 1
             port = src_port
@@ -48,7 +50,7 @@ def process_pkt(pkt_in, src_port, reset_max_sat):
             label = pkt[Perc_control].label_2
             alloc = pkt[Perc_control].alloc_2
 
-        (newLabel, newAlloc, sumSatAdj, numSatAdj, numFlowsAdj, linkCap) = update_agg_state(pkt[Perc_control].leave, index, label, alloc, pkt[Perc_control].demand)
+        (newLabel, newAlloc, sumSatAdj, numSatAdj, numFlowsAdj) = update_agg_state(linkCap_r, pkt[Perc_control].leave, index, label, alloc, pkt[Perc_control].demand)
 
         # update label and alloc with new values
         if (pkt[Perc_control].hopCnt == 0):
@@ -61,7 +63,7 @@ def process_pkt(pkt_in, src_port, reset_max_sat):
             pkt[Perc_control].label_2 = newLabel
             pkt[Perc_control].alloc_2 = newAlloc
 
-        R = divide(linkCap - sumSatAdj, numFlowsAdj - numSatAdj)
+        R = divide(linkCap_r - sumSatAdj, numFlowsAdj - numSatAdj)
 
         # fill in new allocation if flow is UNSAT now
         if (newLabel == UNSAT and pkt[Perc_control].hopCnt == 0):
@@ -72,7 +74,7 @@ def process_pkt(pkt_in, src_port, reset_max_sat):
             pkt[Perc_control].alloc_2 = R
        
         # update maxSat and nextMaxSat state 
-        newMaxSat = update_max_sat(index, newLabel, newAlloc, reset_max_sat)
+        newMaxSat = update_max_sat(resetMaxSat, index, newLabel, newAlloc)
 
         # updated requested bandwidth if flow is active
         if (pkt[Perc_control].leave != 1):
@@ -107,13 +109,13 @@ def port_index_map_apply(port):
     print >> sys.stderr, "ERROR: port {} not in port_index_map".format(port)
     sys.exit(1)
 
-def update_agg_state(leave_in, index_in, label_in, alloc_in, demand_in):
+def update_agg_state(linkCap_in, leave_in, index_in, label_in, alloc_in, demand_in):
     assert(index_in < REG_DEPTH)
 
     old_label = label_in
     old_alloc = alloc_in
 
-    C = linkCap_r
+    C = linkCap_in
     if (label_in == SAT):
         sumSatAdj = sumSat_r[index_in] - alloc_in
         numSatAdj = numSat_r[index_in] - 1
@@ -154,12 +156,12 @@ def update_agg_state(leave_in, index_in, label_in, alloc_in, demand_in):
         sumSat_r[index_in] -= old_alloc
         numSat_r[index_in] -= 1
 
-    return (new_label, new_alloc, sumSatAdj, numSatAdj, numFlowsAdj, C)
+    return (new_label, new_alloc, sumSatAdj, numSatAdj, numFlowsAdj)
 
 
-def update_max_sat(index_in, newLabel_in, newAlloc_in, reset_max_sat):
+def update_max_sat(resetMaxSat_in, index_in, newLabel_in, newAlloc_in):
     global maxSat_r, nextMaxSat_r
-    if (reset_max_sat):
+    if (resetMaxSat_in):
         if (newLabel_in == SAT):
             newMaxSat = max(newAlloc_in, nextMaxSat_r)
         else:

@@ -33,7 +33,7 @@
 SDNET_OUT_DIR=nf_sume_sdnet_ip
 
 PX=sdnet
-PX_FLAGS=-busType axi -busWidth 256 -singlecontrolport -workDir ${SDNET_OUT_DIR}
+PX_FLAGS=-tf1 -busType axi -busWidth 256 -singlecontrolport -workDir ${SDNET_OUT_DIR}
 TARGET=${SUME_FOLDER}/lib/hw/contrib/cores
 P4_SWITCH=SimpleSumeSwitch
 P4_SWITCH_BASE_ADDR=0x44020000

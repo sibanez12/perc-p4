@@ -36,6 +36,10 @@
  *
  */
 
+/*
+ * Compiles in 40 min!
+ */
+
 #define N 32
 #define L 10
 #define PERC_TYPE 0x1234
@@ -46,29 +50,67 @@
 #define UNSAT     2w2
 #define NEW_FLOW  2w3
 
+// send all control packets to nf3 
+#define CTRL_PORT 8w0b01000000
+#define TIMER_WIDTH 64
+typedef bit<TIMER_WIDTH> timerVal_t;
+
 typedef bit<48> EthAddr_t; 
 typedef bit<N> PercInt_t;
 
+// timestamp generation
+@Xilinx_MaxLatency(1)
+@Xilinx_ControlWidth(0)
+extern void tin_timestamp(in bit<1> valid, out timerVal_t result);
+
+#define REG_READ 8w0
+#define REG_WRITE 8w1
+// bufFull register
+@Xilinx_MaxLatency(1)
+@Xilinx_ControlWidth(1)
+extern void bufFull_reg_rw(in bit<1> index,
+                           in bit<1> newVal,
+                           in bit<8> opCode,
+                           out bit<1> result);
+
+// linkCap register
+@Xilinx_MaxLatency(1)
+@Xilinx_ControlWidth(1)
+extern void linkCap_reg_rw(in bit<1> index,
+                           in PercInt_t newVal,
+                           in bit<8> opCode,
+                           out PercInt_t result);
+
+// timeout register
+@Xilinx_MaxLatency(1)
+@Xilinx_ControlWidth(1)
+extern void timeout_reg_rw(in bit<1> index,
+                           in timerVal_t newVal,
+                           in bit<8> opCode,
+                           out timerVal_t result);
+
 @Xilinx_MaxLatency(5) // usually 3 (for control pkts), but if the buffer is empty then 2 cycles for empty to go low...
 @Xilinx_ControlWidth(0)
-extern void extern1_agg_state(in bit<1> leave_in,
+extern void extern1_agg_state(in PercInt_t linkCap_in,
+                           in bit<1> leave_in,
                            in bit<2> index_in,
                            in bit<2> label_in,
-                           in bit<N> alloc_in,
-                           in bit<N> demand_in,
+                           in PercInt_t alloc_in,
+                           in PercInt_t demand_in,
+                           out bit<1> bufFull_out,
                            out bit<2> newLabel_out,
-                           out bit<N> newAlloc_out,
-                           out bit<N> sumSatAdj_out,
-                           out bit<N> numSatAdj_out,
-                           out bit<N> numFlowsAdj_out,
-                           out bit<N> linkCap_out);
+                           out PercInt_t newAlloc_out,
+                           out PercInt_t sumSatAdj_out,
+                           out PercInt_t numSatAdj_out,
+                           out PercInt_t numFlowsAdj_out);
 
 @Xilinx_MaxLatency(1)
 @Xilinx_ControlWidth(0)
-extern void extern2_max_sat(in bit<2> index_in,
+extern void extern2_max_sat(in timerVal_t timeoutVal_in,
+                            in bit<2> index_in,
                             in bit<2> newLabel_in,
-                            in bit<N> newAlloc_in,
-                            out bit<N> newMaxSat_out);
+                            in PercInt_t newAlloc_in,
+                            out PercInt_t newMaxSat_out);
 
 // standard Ethernet header
 header Ethernet_h { 
@@ -90,6 +132,8 @@ header Perc_control_h {
     bit<8> hopCnt;
     bit<8> bottleneck_id;
     PercInt_t demand;
+    bit<8> insert_timestamp;
+    timerVal_t timestamp;
     bit<8> label_0;
     bit<8> label_1;
     bit<8> label_2;
@@ -269,7 +313,7 @@ control TopPipe(inout Parsed_packet p,
             set_result;
             set_default_result;
         }
-        size = 2048;
+        size = 4096;
         default_action = set_default_result;
     }
 
@@ -279,7 +323,15 @@ control TopPipe(inout Parsed_packet p,
         forward.apply();
 
         if (p.perc_control.isValid()) {
-            sume_metadata.hp_dst_port = dst_port; // send to high priority queue 
+            // send to high priority queue
+            sume_metadata.hp_dst_port = dst_port | CTRL_PORT; // copy to dedicated ctrl pkt port
+
+            timerVal_t curTime; 
+            tin_timestamp(1w1, curTime);
+            if (p.perc_control.insert_timestamp == 1) {
+                p.perc_control.timestamp = curTime;
+            }
+
             if (p.perc_control.isForward != 1) {
                 p.perc_control.hopCnt = p.perc_control.hopCnt - 1;
                 port = sume_metadata.src_port;
@@ -302,24 +354,34 @@ control TopPipe(inout Parsed_packet p,
                 alloc = p.perc_control.alloc_2;
             }
 
+            // read linkCap
+            PercInt_t linkCap;
+            linkCap_reg_rw(1w1, 0, REG_READ, linkCap);
+
             // Update sumSat, numSat, and numFlows
             bit<2> newLabel;
             PercInt_t newAlloc;
             PercInt_t sumSatAdj;
             PercInt_t numSatAdj;
             PercInt_t numFlowsAdj;
-            PercInt_t linkCap;
-            extern1_agg_state(p.perc_control.leave[0:0],
+            bit<1> bufFull;
+            extern1_agg_state(linkCap,
+                              p.perc_control.leave[0:0],
                               index,
                               label,
                               alloc,
                               p.perc_control.demand,
+                              bufFull,
                               newLabel,
                               newAlloc,
                               sumSatAdj,
                               numSatAdj,
-                              numFlowsAdj,
-                              linkCap);
+                              numFlowsAdj);
+            bit<1> bufFull_out;
+            if (bufFull == 1) {
+                bufFull_reg_rw(1w1, bufFull, REG_WRITE, bufFull_out);
+            }
+
             // update label and alloc with new values
             if (p.perc_control.hopCnt == 0) {
                 p.perc_control.label_0 = 6w0++newLabel;
@@ -356,7 +418,10 @@ control TopPipe(inout Parsed_packet p,
 
             // perform maxSat update
             PercInt_t newMaxSat;
-            extern2_max_sat(index,
+            timerVal_t timeoutVal;
+            timeout_reg_rw(1w1, 0, REG_READ, timeoutVal);
+            extern2_max_sat(timeoutVal,
+                            index,
                             newLabel,
                             newAlloc,
                             newMaxSat);
