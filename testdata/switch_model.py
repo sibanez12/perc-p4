@@ -12,7 +12,7 @@ labelMap = {INACTIVE:"INACTIVE", SAT:"SAT", UNSAT:"UNSAT", NEW_FLOW:"NEW_FLOW"}
 
 REG_DEPTH = 4
 
-linkCap_r = 1000000
+linkCap_r = 2**31 
 sumSat_r = [0,0,0,0]
 numSat_r = [0,0,0,0]
 numFlows_r = [0,0,0,0]
