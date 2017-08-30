@@ -32,3 +32,5 @@ can process control and data pkts, control pkts are copied to a dedicated loggin
 port (nf3) and timestamped if desired, the switch will drop a pkt if it has the
 same source and destination MAC addresses. 
 
+BUG: the timestamp is not inserted into the control packets
+

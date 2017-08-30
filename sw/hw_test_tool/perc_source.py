@@ -32,7 +32,6 @@
 
 import os, sys, re, cmd, subprocess, shlex, time
 from threading import Thread
-from time import sleep, time
 
 sys.path.append(os.path.expandvars('$P4_PROJECT_DIR/testdata/'))
 from perc_test_lib import *
@@ -67,12 +66,12 @@ class PercSwitchTester(cmd.Cmd):
         with open(fname, 'w') as log:
             log.write("\nFlow {}:\n".format(flowID))
             log.write(self.sending_pkt_str(pkt.summary()))
-            start_time = time()
+            start_time = time.time()
             # send start flow packet
             pkt = srp1(pkt, iface=IFACE)
             log.write(self.received_pkt_str(pkt.summary()))
             # continue sending control packets
-            while time() < start_time + duration:
+            while time.time() < start_time + duration:
                 pkt = end_host_response(pkt, leave=0)
                 log.write(self.sending_pkt_str(pkt.summary()))
                 pkt = srp1(pkt, iface=IFACE)
@@ -123,7 +122,7 @@ Received packet:
             run_flow_thread = Thread(target = self.run_flow, args = (start_pkt, duration, ))
             run_flow_thread.start()
             self.flow_threads.append(run_flow_thread)
-            sleep(0.25) 
+            time.sleep(1.0) 
 
         # wait for flows to complete
         for thread in self.flow_threads:

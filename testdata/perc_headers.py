@@ -49,6 +49,17 @@ class Perc_generic(Packet):
         BitField("flowID", 0, N),
         BitField("isControl", 0, 8)
     ]
+
+    def answers(self, other):
+        if isinstance(other, Perc_generic):
+            if self.flowID == other.flowID:
+                return 1 
+        return 0
+
+    def mysummary(self):
+        return self.sprintf("""Perc_generic:
+\tflowID = %flowID%
+\tisControl = %isControl%""")
    
 
 class Perc_control(Packet):
@@ -68,6 +79,22 @@ class Perc_control(Packet):
          BitField("alloc_1", 0, N),
          BitField("alloc_2", 0, N)
      ]
+
+     def mysummary(self):
+         return self.sprintf("""Perc_control:
+\tleave = %leave%
+\tisForward = %isForward%
+\thopCnt = %hopCnt%
+\tbottleneck_id = %bottleneck_id%
+\tdemand = %demand%
+\tinsert_timestamp = %insert_timestamp%
+\ttimestamp = %timestamp%
+\tlabel_0 = %label_0%
+\tlabel_1 = %label_1%
+\tlabel_2 = %label_2%
+\talloc_0 = %alloc_0%
+\talloc_1 = %alloc_1%
+\talloc_2 = %alloc_2%""")
 
 bind_layers(Ether, Perc_generic, type=PERC_TYPE)
 bind_layers(Perc_generic, Perc_control, isControl=1)

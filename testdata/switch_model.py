@@ -94,6 +94,10 @@ def process_pkt(pkt_in, src_port, resetMaxSat):
         # is a data packet
         lp_dst_port = dst_port # send to low priority queue
 
+    if (pkt[Ether].src == pkt[Ether].dst):
+        lp_dst_port = 0
+        hp_dst_port = 0
+
     return (pkt, hp_dst_port, lp_dst_port)
 
 

@@ -36,10 +36,6 @@
  *
  */
 
-/*
- * Compiles in 40 min!
- */
-
 #define N 32
 #define L 10
 #define PERC_TYPE 0x1234
@@ -89,7 +85,15 @@ typedef bit<N> PercInt_t;
 //                            in bit<8> opCode,
 //                            out timerVal_t result);
 
-@Xilinx_MaxLatency(5) // usually 3 (for control pkts), but if the buffer is empty then 2 cycles for empty to go low...
+/*
+ * - 3 cycles to process each ctrl pkt
+ * - At most 100 ctrl pkts in buffer at same time
+ * - Takes 300 cycles to process all of those ctrl pkts
+ * - In those 300 cycles another 300 data pkts can arrive
+ * - buffer must be able to hold at least 400 requests
+ * - max latency = 300 (for 100 ctrl pkts) + 300 (for data pkts) = 600
+ */
+@Xilinx_MaxLatency(600) // 3 (for control pkts), but if the buffer is empty then 2 cycles for empty to go low...
 @Xilinx_ControlWidth(0)
 extern void extern1_agg_state(in bit<1> leave_in,
                            in bit<2> index_in,
@@ -455,6 +459,11 @@ control TopPipe(inout Parsed_packet p,
         } else {
             // is a data packet
             sume_metadata.lp_dst_port = dst_port; // send to low priority queue
+        }
+
+        if (p.ethernet.srcAddr == p.ethernet.dstAddr) {
+            sume_metadata.lp_dst_port = 0;
+            sume_metadata.hp_dst_port = 0;
         }
 
     }

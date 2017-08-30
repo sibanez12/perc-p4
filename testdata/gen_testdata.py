@@ -125,6 +125,7 @@ for i in range(1):
     hopCnt = 0
     bottleneck_id = (2**8)-1 # -1
     demand = (2**N)-1  # inf
+    insert_timestamp=0
     label_0 = NEW_FLOW
     label_1 = NEW_FLOW
     label_2 = NEW_FLOW
@@ -133,7 +134,7 @@ for i in range(1):
     alloc_2 = (2**N)-1
     pkt = Ether(dst=nf_mac_map[egress], src=nf_mac_map[ingress]) / \
           Perc_generic(flowID = flowID, isControl = isControl) / \
-          Perc_control(leave=leave, isForward=isForward, hopCnt=hopCnt, bottleneck_id=bottleneck_id, demand=demand, label_0=label_0, label_1=label_1, label_2=label_2, alloc_0=alloc_0, alloc_1=alloc_1, alloc_2=alloc_2)
+          Perc_control(leave=leave, isForward=isForward, hopCnt=hopCnt, bottleneck_id=bottleneck_id, demand=demand, insert_timestamp=insert_timestamp, label_0=label_0, label_1=label_1, label_2=label_2, alloc_0=alloc_0, alloc_1=alloc_1, alloc_2=alloc_2)
     pkt = pad_pkt(pkt, 64)
     print "-------------------------\nInput Pkt: \n-------------------------\n", pkt.show()
     applyPkt(pkt, ingress, i)
