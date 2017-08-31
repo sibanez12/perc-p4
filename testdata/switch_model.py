@@ -76,6 +76,15 @@ def process_pkt(pkt_in, src_port, resetMaxSat):
         # update maxSat and nextMaxSat state 
         newMaxSat = update_max_sat(resetMaxSat, index, newLabel, newAlloc)
 
+        if (pkt[Perc_control].insert_debug == 1):
+            pkt[Perc_control].timestamp = 0  # cannot know HW timestamp
+            pkt[Perc_control].linkCap = linkCap_r
+            pkt[Perc_control].sumSatAdj = sumSatAdj
+            pkt[Perc_control].numFlowsAdj = numFlowsAdj
+            pkt[Perc_control].numSatAdj = numSatAdj
+            pkt[Perc_control].newMaxSat = newMaxSat
+            pkt[Perc_control].R = R
+
         # updated requested bandwidth if flow is active
         if (pkt[Perc_control].leave != 1):
             B = max(newMaxSat, R)

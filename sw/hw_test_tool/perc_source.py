@@ -35,7 +35,6 @@ from threading import Thread
 
 sys.path.append(os.path.expandvars('$P4_PROJECT_DIR/testdata/'))
 from perc_test_lib import *
-from threading import Thread
 
 PKT_SIZE = 64
 IFACE = "eth1"
@@ -117,7 +116,7 @@ Received packet:
 
         # launch the flows
         for i in range(num_flows):
-            start_pkt = start_flow_pkt('nf0', 'nf1', self.cur_flow_id, insert_timestamp=1) 
+            start_pkt = start_flow_pkt('nf0', 'nf1', self.cur_flow_id, insert_debug=1) 
             self.cur_flow_id += 1
             run_flow_thread = Thread(target = self.run_flow, args = (start_pkt, duration, ))
             run_flow_thread.start()

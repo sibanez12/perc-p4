@@ -70,14 +70,20 @@ class Perc_control(Packet):
          BitField("hopCnt", 0, 8),
          BitField("bottleneck_id", 0, 8),
          BitField("demand", 0, N),
-         BitField("insert_timestamp", 0, 8),
+         BitField("insert_debug", 0, 8),
          BitField("timestamp", 0, TIMER_WIDTH),
          ByteEnumField("label_0", 0, {INACTIVE:"INACTIVE", SAT:"SAT", UNSAT:"UNSAT", NEW_FLOW:"NEW_FLOW"}),
          ByteEnumField("label_1", 0, {INACTIVE:"INACTIVE", SAT:"SAT", UNSAT:"UNSAT", NEW_FLOW:"NEW_FLOW"}),
          ByteEnumField("label_2", 0, {INACTIVE:"INACTIVE", SAT:"SAT", UNSAT:"UNSAT", NEW_FLOW:"NEW_FLOW"}),
          BitField("alloc_0", 0, N),
          BitField("alloc_1", 0, N),
-         BitField("alloc_2", 0, N)
+         BitField("alloc_2", 0, N),
+         BitField("linkCap", 0, N),
+         BitField("sumSatAdj", 0, N),
+         BitField("numFlowsAdj", 0, N),
+         BitField("numSatAdj", 0, N),
+         BitField("newMaxSat", 0, N),
+         BitField("R", 0, N)
      ]
 
      def mysummary(self):
@@ -87,14 +93,20 @@ class Perc_control(Packet):
 \thopCnt = %hopCnt%
 \tbottleneck_id = %bottleneck_id%
 \tdemand = %demand%
-\tinsert_timestamp = %insert_timestamp%
+\tinsert_debug = %insert_debug%
 \ttimestamp = %timestamp%
 \tlabel_0 = %label_0%
 \tlabel_1 = %label_1%
 \tlabel_2 = %label_2%
 \talloc_0 = %alloc_0%
 \talloc_1 = %alloc_1%
-\talloc_2 = %alloc_2%""")
+\talloc_2 = %alloc_2%
+\tlinkCap = %linkCap%
+\tsumSatAdj = %sumSatAdj%
+\tnumFlowsAdj = %numFlowsAdj%
+\tnumSatAdj = %numSatAdj%
+\tnewMaxSat = %newMaxSat%
+\tR = %R%""")
 
 bind_layers(Ether, Perc_generic, type=PERC_TYPE)
 bind_layers(Perc_generic, Perc_control, isControl=1)

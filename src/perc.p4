@@ -136,7 +136,7 @@ header Perc_control_h {
     bit<8> hopCnt;
     bit<8> bottleneck_id;
     PercInt_t demand;
-    bit<8> insert_timestamp;
+    bit<8> insert_debug;
     timerVal_t timestamp;
     bit<8> label_0;
     bit<8> label_1;
@@ -144,6 +144,12 @@ header Perc_control_h {
     PercInt_t alloc_0;
     PercInt_t alloc_1;
     PercInt_t alloc_2;
+    PercInt_t linkCap;
+    PercInt_t sumSatAdj;
+    PercInt_t numFlowsAdj;
+    PercInt_t numSatAdj;
+    PercInt_t newMaxSat;
+    PercInt_t R;
 }
 
 // List of all recognized headers
@@ -330,12 +336,6 @@ control TopPipe(inout Parsed_packet p,
             // send to high priority queue
             sume_metadata.hp_dst_port = dst_port | CTRL_PORT; // copy to dedicated ctrl pkt port
 
-//            timerVal_t curTime; 
-//            tin_timestamp(1w1, curTime);
-//            if (p.perc_control.insert_timestamp == 1) {
-//                p.perc_control.timestamp = curTime;
-//            }
-
             if (p.perc_control.isForward != 1) {
                 p.perc_control.hopCnt = p.perc_control.hopCnt - 1;
                 port = sume_metadata.src_port;
@@ -357,10 +357,6 @@ control TopPipe(inout Parsed_packet p,
                 label = p.perc_control.label_2[1:0];
                 alloc = p.perc_control.alloc_2;
             }
-
-//            // read linkCap
-//            PercInt_t linkCap;
-//            linkCap_reg_rw(1w1, 0, REG_READ, linkCap);
 
             // Update sumSat, numSat, and numFlows
             bit<2> newLabel;
@@ -430,8 +426,14 @@ control TopPipe(inout Parsed_packet p,
                             curTime,
                             newMaxSat);
 
-            if (p.perc_control.insert_timestamp == 1) {
+            if (p.perc_control.insert_debug == 1) {
                 p.perc_control.timestamp = curTime;
+                p.perc_control.linkCap = linkCap;
+                p.perc_control.sumSatAdj = sumSatAdj;
+                p.perc_control.numFlowsAdj = numFlowsAdj;
+                p.perc_control.numSatAdj = numSatAdj;
+                p.perc_control.newMaxSat = newMaxSat;
+                p.perc_control.R = R;
             }
 
             // updated requested bandwidth if flow is active
