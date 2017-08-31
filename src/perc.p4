@@ -29,7 +29,7 @@
 
 
 #include <core.p4>
-#include <sume_switch.p4>
+#include "sume_switch_perc.p4"
 
 /*
  * Template P4 project for SimpleSumeSwitch 
