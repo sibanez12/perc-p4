@@ -94,8 +94,8 @@ typedef bit<N> PercInt_t;
  * - max latency = 300 (for 100 ctrl pkts) + 300 (for data pkts) = 600
  */
 @Xilinx_MaxLatency(600) // 3 (for control pkts), but if the buffer is empty then 2 cycles for empty to go low...
-@Xilinx_ControlWidth(0)
-extern void extern1_agg_state(in bit<1> leave_in,
+@Xilinx_ControlWidth(1) // can read buf_full
+extern void aggState_agg_state(in bit<1> leave_in,
                            in bit<2> index_in,
                            in bit<2> label_in,
                            in PercInt_t alloc_in,
@@ -109,8 +109,8 @@ extern void extern1_agg_state(in bit<1> leave_in,
                            out PercInt_t linkCap_out);
 
 @Xilinx_MaxLatency(1)
-@Xilinx_ControlWidth(0)
-extern void extern2_max_sat(in bit<2> index_in,
+@Xilinx_ControlWidth(1) // can read/write timeoutVal
+extern void maxSat_max_sat(in bit<2> index_in,
                             in bit<2> newLabel_in,
                             in PercInt_t newAlloc_in,
                             out timerVal_t timestamp_out,
@@ -366,7 +366,7 @@ control TopPipe(inout Parsed_packet p,
             PercInt_t numFlowsAdj;
             PercInt_t linkCap;
             bit<1> bufFull;
-            extern1_agg_state(p.perc_control.leave[0:0],
+            aggState_agg_state(p.perc_control.leave[0:0],
                               index,
                               label,
                               alloc,
@@ -420,7 +420,7 @@ control TopPipe(inout Parsed_packet p,
             // perform maxSat update
             PercInt_t newMaxSat;
             timerVal_t curTime;
-            extern2_max_sat(index,
+            maxSat_max_sat(index,
                             newLabel,
                             newAlloc,
                             curTime,

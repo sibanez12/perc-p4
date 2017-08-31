@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import sys, os, re, argparse
 from collections import OrderedDict
@@ -51,6 +52,11 @@ def get_flow_info(log_file):
                 flowNewMaxSats[flowID].append((float(pkt.newMaxSat)/LINK_CAP)*10)
                 flowRs[flowID].append((float(pkt.R)/LINK_CAP)*10)
 
+def report_rtt():
+    diff = [j-i for i, j in zip(flowTimes[0][:-1], flowTimes[0][1:])]
+    avg_rtt = np.mean(diff)
+    print "avg_rtt = ", avg_rtt , " (ns)"
+
 def dump_flow_info():
      # plot the results
     for flowID in flowRates.keys():
@@ -94,10 +100,14 @@ def main():
     parser.add_argument('--numSat', action='store_true', default=False, help='plot the numSat of each flow')
     parser.add_argument('--newMaxSat', action='store_true', default=False, help='plot the newMaxSat of each flow')
     parser.add_argument('--R', action='store_true', default=False, help='plot the R of each flow')
+    parser.add_argument('--rtt', action='store_true', default=False, help='report the average rtt')
     parser.add_argument('logged_pkts', type=str, help="the pcap file that contains all of the logged control packets from the switch")
     args = parser.parse_args()
 
     get_flow_info(args.logged_pkts)
+    if (args.rtt):
+        report_rtt()
+
     if (args.demand):
         plot_flow_data(flowDemands, 'Flow demands over time', 'rate (Gbps)', y_lim=[0,11])
     if (args.alloc):
@@ -116,6 +126,12 @@ def main():
         plot_flow_data(flowNewMaxSats, 'Flow maxSat state over time', 'rate (Gbps)', y_lim=[0,11])
     if (args.R):
         plot_flow_data(flowRs, 'Flow R measurements over time', 'rate (Gbps)', y_lim=[0,11])
+
+    font = {'family' : 'normal',
+            'weight' : 'bold',
+            'size'   : 22}
+    
+    matplotlib.rc('font', **font)
 
     plt.show()
 
