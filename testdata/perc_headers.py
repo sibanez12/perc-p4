@@ -93,6 +93,12 @@ class Perc_control(Packet):
          BitField("R", 0, N)
      ]
 
+     def answers(self, other):
+         if isinstance(other, Perc_control):
+             if self.flowID == other.flowID:
+                 return 1 
+         return 0
+
      def mysummary(self):
          return self.sprintf("""Perc_control:
 \tflowID = %flowID%

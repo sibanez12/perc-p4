@@ -80,17 +80,6 @@ class PercSwitchTester(cmd.Cmd):
             log.write(self.sending_pkt_str(pkt.summary()))
             sendp(pkt, iface=IFACE)
 
-#            for i in range(num_rtts):
-#                if i == num_rtts-1:
-#                    pkt = end_host_response(pkt, leave=1)
-#                    log.write(self.sending_pkt_str(pkt.summary()))
-#                    sendp(pkt, iface=IFACE)
-#                else:
-#                    pkt = end_host_response(pkt, leave=0)
-#                    log.write(self.sending_pkt_str(pkt.summary()))
-#                    pkt = srp1(pkt, iface=IFACE)
-#                    log.write(self.received_pkt_str(pkt.summary()))
-
     def sending_pkt_str(self, pkt_str):
         return """
 Sending packet:
