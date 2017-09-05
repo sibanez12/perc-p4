@@ -13,8 +13,7 @@ def start_flow_pkt(ingress, egress, flowID,
     leave = 0
     isForward = 1
     pkt = Ether(dst=nf_mac_map[egress], src=nf_mac_map[ingress]) / \
-          Perc_generic(flowID=flowID) / \
-          Perc_control(leave=leave, isForward=isForward, hopCnt=hopCnt, bottleneck_id=bottleneck_id, demand=demand, insert_debug=insert_debug, timestamp=timestamp, label_0=label_0, label_1=label_1, label_2=label_2, alloc_0=alloc_0, alloc_1=alloc_1, alloc_2=alloc_2)
+          Perc_control(flowID=flowID, leave=leave, isForward=isForward, hopCnt=hopCnt, bottleneck_id=bottleneck_id, demand=demand, insert_debug=insert_debug, timestamp=timestamp, label_0=label_0, label_1=label_1, label_2=label_2, alloc_0=alloc_0, alloc_1=alloc_1, alloc_2=alloc_2)
     pkt = pad_pkt(pkt, 64)
     return pkt
 
@@ -29,7 +28,7 @@ def end_host_response(pkt_in, leave=0):
 
 def make_data_pkt(ingress, egress, flowID, size):
     pkt = Ether(dst=nf_mac_map[egress], src=nf_mac_map[ingress]) / \
-          Perc_generic(flowID=flowID, isControl=0)
+          Perc_data(flowID=flowID)
     pkt = pad_pkt(pkt, size)
     return pkt
 

@@ -53,9 +53,13 @@ def get_flow_info(log_file):
                 flowRs[flowID].append((float(pkt.R)/LINK_CAP)*10)
 
 def report_rtt():
-    diff = [j-i for i, j in zip(flowTimes[0][:-1], flowTimes[0][1:])]
-    avg_rtt = np.mean(diff)
-    print "avg_rtt = ", avg_rtt , " (ns)"
+    for flowID, times in flowTimes.items():
+        diff = [j-i for i, j in zip(times[:-1], times[1:])]
+        avg_rtt = 2.0*np.mean(diff)
+        max_diff = max(diff)
+        print "flow {}:".format(flowID)
+        print "\tavg_rtt = ", avg_rtt , " (ns)"
+        print "\tmax_diff = ", max_diff, " (ns)"
 
 def dump_flow_info():
      # plot the results
@@ -98,7 +102,7 @@ def main():
     parser.add_argument('--sumSat', action='store_true', default=False, help='plot the sumSat of each flow')
     parser.add_argument('--numFlows', action='store_true', default=False, help='plot the numFlows of each flow')
     parser.add_argument('--numSat', action='store_true', default=False, help='plot the numSat of each flow')
-    parser.add_argument('--newMaxSat', action='store_true', default=False, help='plot the newMaxSat of each flow')
+    parser.add_argument('--maxSat', action='store_true', default=False, help='plot the newMaxSat of each flow')
     parser.add_argument('--R', action='store_true', default=False, help='plot the R of each flow')
     parser.add_argument('--rtt', action='store_true', default=False, help='report the average rtt')
     parser.add_argument('logged_pkts', type=str, help="the pcap file that contains all of the logged control packets from the switch")
@@ -122,7 +126,7 @@ def main():
         plot_flow_data(flowNumFlows, 'Flow numFlows state over time', 'numFlows')
     if (args.numSat):
         plot_flow_data(flowNumSats, 'Flow numSat state over time', 'numSat')
-    if (args.newMaxSat):
+    if (args.maxSat):
         plot_flow_data(flowNewMaxSats, 'Flow maxSat state over time', 'rate (Gbps)', y_lim=[0,11])
     if (args.R):
         plot_flow_data(flowRs, 'Flow R measurements over time', 'rate (Gbps)', y_lim=[0,11])

@@ -38,8 +38,9 @@
 
 #define N 32
 #define L 10
-#define PERC_TYPE 0x1234
-#define MAX_HOPS 2
+#define PERC_CONTROL 0x1234
+#define PERC_DATA 0x1212
+#define PERC_ACK 0x1213
 
 #define INACTIVE  2w0
 #define SAT       2w1
@@ -123,14 +124,17 @@ header Ethernet_h {
     bit<16> etherType;
 }
 
-// generic perc header for both data and control pkts
-header Perc_generic_h {
+// perc header for data and ACK pkts 
+header Perc_data_h {
     PercInt_t flowID;
-    bit<8> isControl; 
+    PercInt_t index;
+    PercInt_t seqNo;
+    PercInt_t ackNo;
 }
 
 // perc header for control pkts
 header Perc_control_h {
+    PercInt_t flowID;
     bit<8> leave;
     bit<8> isForward;
     bit<8> hopCnt;
@@ -155,7 +159,7 @@ header Perc_control_h {
 // List of all recognized headers
 struct Parsed_packet { 
     Ethernet_h ethernet; 
-    Perc_generic_h perc_generic;
+    Perc_data_h perc_data;
     Perc_control_h perc_control;
 }
 
@@ -182,17 +186,16 @@ parser TopParser(packet_in b,
         user_metadata.unused = 0;
         digest_data.unused = 0;
         transition select(p.ethernet.etherType) {
-            PERC_TYPE: parse_perc_generic;
+            PERC_CONTROL: parse_perc_control;
+            PERC_DATA: parse_perc_data;
+            PERC_ACK: parse_perc_data;
             default: accept;
         } 
     }
 
-    state parse_perc_generic { 
-        b.extract(p.perc_generic);
-        transition select(p.perc_generic.isControl) {
-            1 : parse_perc_control;
-            default: accept;
-        } 
+    state parse_perc_data { 
+        b.extract(p.perc_data);
+        transition accept;
     }
 
     state parse_perc_control {
@@ -480,7 +483,7 @@ control TopDeparser(packet_out b,
                     inout sume_metadata_t sume_metadata) { 
     apply {
         b.emit(p.ethernet); 
-        b.emit(p.perc_generic); 
+        b.emit(p.perc_data); 
         b.emit(p.perc_control); 
     }
 }

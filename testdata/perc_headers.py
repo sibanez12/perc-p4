@@ -41,13 +41,17 @@ SAT      = 1
 UNSAT    = 2
 NEW_FLOW = 3
 
-PERC_TYPE = 0x1234
+PERC_CONTROL = 0x1234
+PERC_DATA = 0x1212
+PERC_ACK = 0x1213
 
-class Perc_generic(Packet):
-    name = "Perc_generic"
+class Perc_data(Packet):
+    name = "Perc_data"
     fields_desc = [
-        BitField("flowID", 0, N),
-        BitField("isControl", 0, 8)
+        BitField("flowID", 0, N), 
+        BitField("index" , 0, N), 
+        BitField("seqNo" , 0, N), 
+        BitField("ackNo" , 0, N) 
     ]
 
     def answers(self, other):
@@ -57,14 +61,17 @@ class Perc_generic(Packet):
         return 0
 
     def mysummary(self):
-        return self.sprintf("""Perc_generic:
+        return self.sprintf("""Perc_data:
 \tflowID = %flowID%
-\tisControl = %isControl%""")
+\tindex = %index%
+\tseqNo = %seqNo%
+\tackNo = %ackNo%""")
    
 
 class Perc_control(Packet):
      name = "Perc_control"
      fields_desc = [
+         BitField("flowID", 0, N),
          BitField("leave", 0, 8),
          BitField("isForward", 0, 8),
          BitField("hopCnt", 0, 8),
@@ -88,6 +95,7 @@ class Perc_control(Packet):
 
      def mysummary(self):
          return self.sprintf("""Perc_control:
+\tflowID = %flowID%
 \tleave = %leave%
 \tisForward = %isForward%
 \thopCnt = %hopCnt%
@@ -108,8 +116,9 @@ class Perc_control(Packet):
 \tnewMaxSat = %newMaxSat%
 \tR = %R%""")
 
-bind_layers(Ether, Perc_generic, type=PERC_TYPE)
-bind_layers(Perc_generic, Perc_control, isControl=1)
-bind_layers(Perc_generic, Raw, isControl=0)
+bind_layers(Ether, Perc_control, type=PERC_CONTROL)
+bind_layers(Ether, Perc_data, type=PERC_DATA)
+bind_layers(Ether, Perc_data, type=PERC_ACK)
+bind_layers(Perc_data, Raw)
 bind_layers(Perc_control, Raw)
 
