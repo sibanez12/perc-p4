@@ -335,7 +335,7 @@ control TopPipe(inout Parsed_packet p,
     apply {
         forward.apply();
 
-        if (p.perc_control.isValid()) {
+        if (p.perc_control.isValid() && (p.ethernet.srcAddr != p.ethernet.dstAddr)) {
             // send to high priority queue
             sume_metadata.hp_dst_port = dst_port | CTRL_PORT; // copy to dedicated ctrl pkt port
 
@@ -462,7 +462,7 @@ control TopPipe(inout Parsed_packet p,
                 p.perc_control.hopCnt = p.perc_control.hopCnt + 1;
             }
         } else {
-            // is a data packet
+            // is a data packet (or an invalid control packet)
             sume_metadata.lp_dst_port = dst_port; // send to low priority queue
         }
 

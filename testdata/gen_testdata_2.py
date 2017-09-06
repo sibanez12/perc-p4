@@ -128,8 +128,19 @@ def send_data(ingress, egress, flowID, num_pkts):
 # set up the division tables
 make_tables()
 
-# start flow_0
+# send initial invalid ctrl pkt
+ingress = "nf0"
+egress = "nf1"
+flowID = 0
+pkt_f0 = start_flow_pkt(ingress, egress, flowID)
+pkt_f0[Ether].src = pkt_f0[Ether].dst
+applyPkt(pkt_f0, ingress, i)
+resetMaxSat = False
+(pkt_f0, hp_dst_port, lp_dst_port) = process_pkt(pkt_f0, nf_port_map[ingress], resetMaxSat)
+# expect switch output pkt
+expPkt(pkt_f0, hp_dst_port, lp_dst_port)
 
+# start flow_0
 ingress = "nf0"
 egress = "nf1"
 flowID = 0

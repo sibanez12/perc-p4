@@ -30,7 +30,7 @@ def process_pkt(pkt_in, src_port, resetMaxSat):
     lp_dst_port = 0
     dst_port = forward_apply(pkt) 
 
-    if Perc_control in pkt:
+    if Perc_control in pkt and (pkt[Ether].src != pkt[Ether].dst):
         hp_dst_port = dst_port | CTRL_PORT
         if (pkt[Perc_control].isForward != 1):
             pkt[Perc_control].hopCnt -= 1
