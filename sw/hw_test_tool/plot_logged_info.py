@@ -95,6 +95,7 @@ def plot_flow_data(flow_data, title, y_label, y_lim=None):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--all', action='store_true', default=False, help='plot all the info about the flows')
     parser.add_argument('--demand', action='store_true', default=False, help='plot the demands of each flow')
     parser.add_argument('--alloc', action='store_true', default=False, help='plot the allocation of each flow')
     parser.add_argument('--label', action='store_true', default=False, help='plot the label of each flow')
@@ -109,26 +110,26 @@ def main():
     args = parser.parse_args()
 
     get_flow_info(args.logged_pkts)
-    if (args.rtt):
+    if (args.rtt or args.all):
         report_rtt()
 
-    if (args.demand):
+    if (args.demand or args.all):
         plot_flow_data(flowDemands, 'Flow demands over time', 'rate (Gbps)', y_lim=[0,11])
-    if (args.alloc):
+    if (args.alloc or args.all):
         plot_flow_data(flowAllocs, 'Flow allocations over time', 'rate (Gbps)')
-    if (args.label):
+    if (args.label or args.all):
         plot_flow_data(flowLabels, 'Flow labels over time', 'label', y_lim=[0,3])
-    if (args.linkCap):
+    if (args.linkCap or args.all):
         plot_flow_data(flowLinkCaps, 'Flow linkCap measurements over time', 'rate (Gbps)', y_lim=[0,11])
-    if (args.sumSat):
+    if (args.sumSat or args.all):
         plot_flow_data(flowSumSats, 'Flow sumSat state over time', 'rate (Gbps)', y_lim=[0,11])
-    if (args.numFlows):
+    if (args.numFlows or args.all):
         plot_flow_data(flowNumFlows, 'Flow numFlows state over time', 'numFlows')
-    if (args.numSat):
+    if (args.numSat or args.all):
         plot_flow_data(flowNumSats, 'Flow numSat state over time', 'numSat')
-    if (args.maxSat):
+    if (args.maxSat or args.all):
         plot_flow_data(flowNewMaxSats, 'Flow maxSat state over time', 'rate (Gbps)', y_lim=[0,11])
-    if (args.R):
+    if (args.R or args.all):
         plot_flow_data(flowRs, 'Flow R measurements over time', 'rate (Gbps)', y_lim=[0,11])
 
     font = {'family' : 'normal',
