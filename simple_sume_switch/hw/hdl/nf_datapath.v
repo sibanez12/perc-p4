@@ -326,7 +326,7 @@ module nf_datapath #(
 //    assign dma_q_size = 'd16;
 
       //Output queues
-        priority_output_queues_ip  
+        priority_nf3log_output_queues_ip  
       bram_output_queues_1 (
       .axis_aclk(axis_aclk), 
       .axis_resetn(axis_resetn), 

@@ -77,11 +77,11 @@ set_property generate_synth_checkpoint false [get_files input_arbiter_drr_ip.xci
 reset_target all [get_ips input_arbiter_drr_ip]
 generate_target all [get_ips input_arbiter_drr_ip]
 
-create_ip -name priority_output_queues -vendor NetFPGA -library NetFPGA -module_name priority_output_queues_ip
-set_property -dict [list CONFIG.C_BASEADDR $OUTPUT_QUEUES_BASEADDR] [get_ips priority_output_queues_ip]
-set_property generate_synth_checkpoint false [get_files priority_output_queues_ip.xci]
-reset_target all [get_ips priority_output_queues_ip]
-generate_target all [get_ips priority_output_queues_ip]
+create_ip -name priority_nf3log_output_queues -vendor NetFPGA -library NetFPGA -module_name priority_nf3log_output_queues_ip
+set_property -dict [list CONFIG.C_BASEADDR $OUTPUT_QUEUES_BASEADDR] [get_ips priority_nf3log_output_queues_ip]
+set_property generate_synth_checkpoint false [get_files priority_nf3log_output_queues_ip.xci]
+reset_target all [get_ips priority_nf3log_output_queues_ip]
+generate_target all [get_ips priority_nf3log_output_queues_ip]
 
 #Add ID block
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name identifier_ip
@@ -329,3 +329,4 @@ add_wave_divider {Output Queues Signals}
 add_wave $output_queues
 
 run 3000us
+#run 80us

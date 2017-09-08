@@ -6,7 +6,7 @@ from div_impl import make_tables, divide
 
 from perc_headers import *
 
-CTRL_PORT = 0b01000000
+LOG_PORT = 0b01000000
 
 labelMap = {INACTIVE:"INACTIVE", SAT:"SAT", UNSAT:"UNSAT", NEW_FLOW:"NEW_FLOW"}
 
@@ -31,7 +31,7 @@ def process_pkt(pkt_in, src_port, resetMaxSat):
     dst_port = forward_apply(pkt) 
 
     if Perc_control in pkt and (pkt[Ether].src != pkt[Ether].dst):
-        hp_dst_port = dst_port | CTRL_PORT
+        hp_dst_port = dst_port | LOG_PORT
         if (pkt[Perc_control].isForward != 1):
             pkt[Perc_control].hopCnt -= 1
             port = src_port
@@ -98,9 +98,12 @@ def process_pkt(pkt_in, src_port, resetMaxSat):
 
         if (pkt[Perc_control].isForward == 1):
             pkt[Perc_control].hopCnt += 1
-        
+
+    elif (Perc_data in pkt and (pkt[Ether].src != pkt[Ether].dst)):
+        # is a valid data packet
+        lp_dst_port = dst_port | LOG_PORT; 
     else:
-        # is a data packet
+        # is an ACK pkt or an invalid pkt
         lp_dst_port = dst_port # send to low priority queue
 
     if (pkt[Ether].src == pkt[Ether].dst):

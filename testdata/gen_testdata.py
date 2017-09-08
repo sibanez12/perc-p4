@@ -86,7 +86,12 @@ def expPkt(pkt, hp_dst_port, lp_dst_port):
     i = 0
     while dst_port != 0:
         if (dst_port & 1):
-            nf_expected[i].append(pkt)
+            if i == 3 and Perc_data in pkt:
+                nf3_pkt = pkt.copy()
+                nf3_pkt[Perc_data].payload = '\x00'*34  # trim data packet to 64 bytes
+                nf_expected[i].append(nf3_pkt)
+            else:
+                nf_expected[i].append(pkt)
         dst_port = dst_port >> 2
         i += 1
 

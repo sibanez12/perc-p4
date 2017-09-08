@@ -79,10 +79,10 @@ set_property generate_synth_checkpoint false [get_files input_arbiter_drr_ip.xci
 reset_target all [get_ips input_arbiter_drr_ip]
 generate_target all [get_ips input_arbiter_drr_ip]
 
-create_ip -name priority_output_queues -vendor NetFPGA -library NetFPGA -module_name priority_output_queues_ip
-set_property generate_synth_checkpoint false [get_files priority_output_queues_ip.xci]
-reset_target all [get_ips priority_output_queues_ip]
-generate_target all [get_ips priority_output_queues_ip]
+create_ip -name priority_nf3log_output_queues -vendor NetFPGA -library NetFPGA -module_name priority_nf3log_output_queues_ip
+set_property generate_synth_checkpoint false [get_files priority_nf3log_output_queues_ip.xci]
+reset_target all [get_ips priority_nf3log_output_queues_ip]
+generate_target all [get_ips priority_nf3log_output_queues_ip]
 
 
 #create the IPI Block Diagram

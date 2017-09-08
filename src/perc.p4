@@ -48,7 +48,7 @@
 #define NEW_FLOW  2w3
 
 // send all control packets to nf3 
-#define CTRL_PORT 8w0b01000000
+#define LOG_PORT 8w0b01000000
 #define TIMER_WIDTH 64
 typedef bit<TIMER_WIDTH> timerVal_t;
 
@@ -337,7 +337,7 @@ control TopPipe(inout Parsed_packet p,
 
         if (p.perc_control.isValid() && (p.ethernet.srcAddr != p.ethernet.dstAddr)) {
             // send to high priority queue
-            sume_metadata.hp_dst_port = dst_port | CTRL_PORT; // copy to dedicated ctrl pkt port
+            sume_metadata.hp_dst_port = dst_port | LOG_PORT; // copy to dedicated logging port
 
             if (p.perc_control.isForward != 1) {
                 p.perc_control.hopCnt = p.perc_control.hopCnt - 1;
@@ -461,8 +461,11 @@ control TopPipe(inout Parsed_packet p,
             if (p.perc_control.isForward == 1) {
                 p.perc_control.hopCnt = p.perc_control.hopCnt + 1;
             }
+        } else if (p.perc_data.isValid() && (p.ethernet.srcAddr != p.ethernet.dstAddr)) {
+            // is a valid data packet
+            sume_metadata.lp_dst_port = dst_port | LOG_PORT; // send to low priority queue and copy to logging port
         } else {
-            // is a data packet (or an invalid control packet)
+            // is an ACK packet (or an invalid packet)
             sume_metadata.lp_dst_port = dst_port; // send to low priority queue
         }
 
