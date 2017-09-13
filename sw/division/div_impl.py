@@ -109,10 +109,23 @@ def gen_exp_entries():
 def f_log_inv(x):
     return int(round(exp((x/(2**l-1.0))*log(2**N-1))))
 
-def apply_exp_table(x):
+def apply_exp_table_slow(x):
     for (key, val) in exp_table:
         if key == x:
             return val
+    print >> sys.stderr, "ERROR: could not find match in exp_table for input {}".format(x)
+    sys.exit(1)
+
+def apply_exp_table(x):
+    lo, hi = 0, len(exp_table) - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if exp_table[mid][0] < x:
+            lo = mid + 1
+        elif x < exp_table[mid][0]:
+            hi = mid - 1
+        else:
+            return exp_table[mid][1]
     print >> sys.stderr, "ERROR: could not find match in exp_table for input {}".format(x)
     sys.exit(1)
 
