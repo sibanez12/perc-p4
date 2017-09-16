@@ -17,8 +17,8 @@ sumSat_r = [0,0,0,0]
 numSat_r = [0,0,0,0]
 numFlows_r = [0,0,0,0]
 
-maxSat_r = 0
-nextMaxSat_r = 0
+maxSat_r = [0,0,0,0]
+nextMaxSat_r = [0,0,0,0]
 
 forward = {"08:11:11:11:11:08":0b00000001, "08:22:22:22:22:08":0b00000100, "08:33:33:33:33:08":0b00010000, "08:44:44:44:44:08":0b01000000}
 
@@ -84,6 +84,8 @@ def process_pkt(pkt_in, src_port, resetMaxSat):
             pkt[Perc_control].numSatAdj = numSatAdj
             pkt[Perc_control].newMaxSat = newMaxSat
             pkt[Perc_control].R = R
+            pkt[Perc_control].resetTimer = 0 # cannot know HW timestamp
+            pkt[Perc_control].nf_index = index
 
         # updated requested bandwidth if flow is active
         if (pkt[Perc_control].leave != 1):
@@ -177,21 +179,33 @@ def update_agg_state(linkCap_in, leave_in, index_in, label_in, alloc_in, demand_
 
 def update_max_sat(resetMaxSat_in, index_in, newLabel_in, newAlloc_in):
     global maxSat_r, nextMaxSat_r
+
+    assert(index_in < REG_DEPTH)
+
     if (resetMaxSat_in):
         if (newLabel_in == SAT):
-            newMaxSat = max(newAlloc_in, nextMaxSat_r)
+            newMaxSat = max(newAlloc_in, nextMaxSat_r[index_in])
         else:
-            newMaxSat = nextMaxSat_r
+            newMaxSat = nextMaxSat_r[index_in]
         newNextMaxSat = 0
     elif (newLabel_in == SAT):
-        newMaxSat = max(newAlloc_in, maxSat_r)
-        newNextMaxSat = max(newAlloc_in, nextMaxSat_r)
+        newMaxSat = max(newAlloc_in, maxSat_r[index_in])
+        newNextMaxSat = max(newAlloc_in, nextMaxSat_r[index_in])
     else:
-        newMaxSat = maxSat_r
-        newNextMaxSat = nextMaxSat_r
+        newMaxSat = maxSat_r[index_in]
+        newNextMaxSat = nextMaxSat_r[index_in]
 
-    maxSat_r = newMaxSat
-    nextMaxSat_r = newNextMaxSat
+    for i in range(REG_DEPTH):
+        if i == index_in:
+            maxSat_r[index_in] = newMaxSat
+            nextMaxSat_r[index_in] = newNextMaxSat               
+        else:
+            if resetMaxSat_in:
+                maxSat_r[i] = nextMaxSat_r[i]
+                nextMaxSat_r[i] = 0
+            else:
+                maxSat_r[i] = maxSat_r[i]
+                nextMaxSat_r[i] = nextMaxSat_r[i]
 
     return newMaxSat
 

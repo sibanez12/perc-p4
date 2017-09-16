@@ -37,7 +37,7 @@ sys.path.append(os.path.expandvars('$P4_PROJECT_DIR/testdata/'))
 from perc_test_lib import *
 
 PKT_SIZE = 64
-IFACE = "eth1"
+IFACE = "eth6"
 
 #ETH_SRC = "08:11:11:11:11:08"
 #ETH_DST = "08:22:22:22:22:08"

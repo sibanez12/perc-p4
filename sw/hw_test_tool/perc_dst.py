@@ -37,7 +37,7 @@ sys.path.append(os.path.expandvars('$P4_PROJECT_DIR/testdata/'))
 from perc_headers import *
 from nf_sim_tools import *
 
-IFACE = "eth2"
+IFACE = "eth7"
 PKT_SIZE = 64
 
 MY_MAC = "08:22:22:22:22:08"

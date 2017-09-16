@@ -114,6 +114,7 @@ extern void aggState_agg_state(in bit<1> leave_in,
 extern void maxSat_max_sat(in bit<2> index_in,
                             in bit<2> newLabel_in,
                             in PercInt_t newAlloc_in,
+                            out timerVal_t resetTimer_out,
                             out timerVal_t timestamp_out,
                             out PercInt_t newMaxSat_out);
 
@@ -154,6 +155,8 @@ header Perc_control_h {
     PercInt_t numSatAdj;
     PercInt_t newMaxSat;
     PercInt_t R;
+    timerVal_t resetTimer;
+    bit<8> nf_index;
 }
 
 // List of all recognized headers
@@ -422,10 +425,12 @@ control TopPipe(inout Parsed_packet p,
 
             // perform maxSat update
             PercInt_t newMaxSat;
+            timerVal_t resetTime;
             timerVal_t curTime;
             maxSat_max_sat(index,
                             newLabel,
                             newAlloc,
+                            resetTime,
                             curTime,
                             newMaxSat);
 
@@ -437,6 +442,8 @@ control TopPipe(inout Parsed_packet p,
                 p.perc_control.numSatAdj = numSatAdj;
                 p.perc_control.newMaxSat = newMaxSat;
                 p.perc_control.R = R;
+                p.perc_control.resetTimer = resetTime;
+                p.perc_control.nf_index = 6w0++index;
             }
 
             // updated requested bandwidth if flow is active

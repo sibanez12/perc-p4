@@ -94,6 +94,6 @@ clean:
 	make -C src/ clean
 	make -C testdata/ clean
 	rm -rf ${SDNET_OUT_DIR}/
-	rm -f $(shell find -name *.log -o -name *.jou)
+	rm -f $(shell find -name *.jou)
 	rm -f sw/config_tables.c
 

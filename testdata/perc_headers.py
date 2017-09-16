@@ -90,7 +90,9 @@ class Perc_control(Packet):
          BitField("numFlowsAdj", 0, N),
          BitField("numSatAdj", 0, N),
          BitField("newMaxSat", 0, N),
-         BitField("R", 0, N)
+         BitField("R", 0, N),
+         BitField("resetTimer", 0, TIMER_WIDTH),
+         BitField("nf_index", 0, 8),
      ]
 
      def answers(self, other):
