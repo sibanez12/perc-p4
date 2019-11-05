@@ -9,4 +9,5 @@ Repository info:
 * `testdata/` - contains some basic regression tests for the s-PERC switch
 * `sw/division` - contains software to generate table entries for division tables
 * `sw/hw_test_tool` - contains simple python-based s-PERC endpoints for testing basic functionality
+* `simple_sume_switch/` - contains NetFPGA specific source files 
 
