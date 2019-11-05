@@ -25,8 +25,8 @@ total_mem = 1885.75 bytes
 """
 
 N = 32
-m = 6 
-l = 10
+m = 6  #9  #7  #6 
+l = 10 #16 #13 #10
 
 log_table = []
 exp_table = []
@@ -147,8 +147,16 @@ def make_tables():
     keys = gen_log_keys()
     gen_log_entries(keys)
     gen_exp_entries()
+    print "N = ", N
+    print "m = ", m
+    print "l = ", l
     print "len(log_table) = ", len(log_table)
     print "len(exp_table) = ", len(exp_table)
+    em_mem = len(exp_table)*N/8e3
+    tcam_mem = 2*len(log_table)*(l+N)/8e3
+    print "exact match mem = ", em_mem, " KB"
+    print "tcam mem = ", tcam_mem, " KB"
+    print "total mem = ", em_mem + tcam_mem
 
 def divide(a,b):
     check_size(a)

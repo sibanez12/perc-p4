@@ -31,7 +31,7 @@
 # Makefile to convert the P4 into PX and P4 commands into SDNet tables
 
 all: clean
-	p4c-sdnet -o ${P4_PROJECT_NAME}.sdnet ${P4_PROJECT_NAME}.p4
+	p4c-sdnet -o ${P4_PROJECT_NAME}.sdnet --sdnet_info .sdnet_switch_info.dat ${P4_PROJECT_NAME}.p4
 	cat commands_user.txt >> commands.txt
 	./gen_table_entries.py
 	cat commands_div.txt >> commands.txt
